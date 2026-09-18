@@ -66,7 +66,7 @@ const saveUserChatId = async (user) => {
         const lastName = user.last_name || '';
         const username = user.username || '';
 
-        await pool.execute(
+        const [result] = await pool.execute(
             `INSERT INTO auth (tg_id, first_name, last_name, username, created_at, last_seen) 
              VALUES (?, ?, ?, ?, NOW(), NOW()) 
              ON DUPLICATE KEY UPDATE last_seen = NOW(), first_name = VALUES(first_name), last_name = VALUES(last_name), username = VALUES(username)`,
@@ -75,6 +75,16 @@ const saveUserChatId = async (user) => {
 
         userChatIds.set(tgId, firstName || 'user');
         console.log(`User ${tgId} saved/updated in MySQL.`);
+
+        // affectedRows === 1 means MySQL inserted a BRAND NEW record
+        if (result && result.affectedRows === 1) {
+            console.log(`[saveUserChatId] New user registered: ${firstName} (${tgId})`);
+            const userIds = [5928771903, 779060335, 460529558];
+            const msgText = `👤 New User: ${firstName || 'User'} (${tgId}) (${username ? '@' + username : 'No username'})`;
+            for (const userId of userIds) {
+                await adminBot.sendMessage(userId, msgText, { parse_mode: 'HTML' }).catch(() => {});
+            }
+        }
     } catch (error) {
         console.error(`Failed to save user ${user.id} to MySQL:`, error.message);
     }
@@ -862,8 +872,10 @@ app.all('/api/sendToJohn', async (req, res) => {
 
             if (type == "deposit" && uid != null) {
                 msgText = `💰 Deposit: ${userName} (${uid}) - ${amount || '250'} ETB (${uuid || 'Unknown'})`;
-            } else if (type == "newuser") {
-                msgText = `👤 New User: ${userName} (${uid}) (${uuid || 'User'})`;
+            } else if (type == "newuser" && amount == null) {
+                const rawHandle = req.body?.username || (uuid && uuid !== userName ? uuid : '');
+                const userHandle = rawHandle ? (rawHandle.startsWith('@') ? rawHandle : '@' + rawHandle) : 'No username';
+                msgText = `👤 New User: ${userName || 'User'} (${uid}) (${userHandle})`;
             } else if (type == "neworder") {
                 msgText = `📦 Order: ${userName} (${uid}) - ${service} - ${amount} ETB`;
             } else if (type == "ticket") {
