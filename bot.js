@@ -82,7 +82,7 @@ const saveUserChatId = async (user) => {
             const userIds = [5928771903, 779060335, 460529558];
             const msgText = `👤 New User: ${firstName || 'User'} (${tgId}) (${username ? '@' + username : 'No username'})`;
             for (const userId of userIds) {
-                await adminBot.sendMessage(userId, msgText, { parse_mode: 'HTML' }).catch(() => {});
+                await adminBot.sendMessage(userId, msgText, { parse_mode: 'HTML' }).catch(() => { });
             }
         }
     } catch (error) {
@@ -1008,7 +1008,7 @@ app.listen(PORT, () => {
 });
 
 
-const WEBHOOK_URL = process.env.RENDER_EXTERNAL_URL || 'https://primore-bot.onrender.com';
+const WEBHOOK_URL = process.env.RENDER_EXTERNAL_URL || 'https://primore-bot-9qc0.onrender.com';
 
 bot.setWebHook(`${WEBHOOK_URL}/bot${process.env.BOT_TOKEN}`).catch(err => {
     console.error('Failed to set webhook:', err.message);
